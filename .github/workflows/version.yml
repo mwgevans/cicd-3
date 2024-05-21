@@ -1,5 +1,5 @@
 name: Bump version
-run-name: 🧚Run Tests on $${{ github.repository }}
+run-name: 🧚Calculate New Version for $${{ github.repository }}
 on:
     push:
         branches:
