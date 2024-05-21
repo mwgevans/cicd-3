@@ -1,4 +1,5 @@
 name: Bump version
+run-name: 🧚Run Tests on $${{ github.repository }}
 on:
     push:
         branches:
