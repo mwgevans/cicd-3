@@ -11,7 +11,7 @@ jobs:
         steps:
             - id: skip_check
               uses: fkirc/skip-duplicate-actions@v5      
-    Build:
+    Build_job:
                 runs-on: ubuntu-22.04
                 steps:
                   - uses: actions/checkout@v4
@@ -20,33 +20,25 @@ jobs:
                     id: meta
                     with:
                       images: Build
-            
-                  - name: Cache
-                    uses: actions/cache@v3
-                    id: cache
+                  - name: Cache Docker layers
+                    uses: actions/cache@v2
                     with:
-                      path: |
-                        var-cache-apt
-                        var-lib-apt
-                      key: cache-${{ hashFiles('.github/workflows/test/Dockerfile') }}
-            
-                  - name: inject cache into docker
-                    uses: reproducible-containers/buildkit-cache-dance@v3.1.0
+                      path: /tmp/.buildx-cache
+                      key: ${{ runner.os }}-buildx-${{ github.sha }}
+                      restore-keys: |
+                         ${{ runner.os }}-buildx-
+                
+                  - name: Build
+                    uses: docker/build-push-action@v2
                     with:
-                      cache-map: |
-                        {
-                          "var-cache-apt": "/var/cache/apt",
-                          "var-lib-apt": "/var/lib/apt"
-                        }
-                      skip-extraction: ${{ steps.cache.outputs.cache-hit }}
-            
-                  - name: Build and push
-                    uses: docker/build-push-action@v5
-                    with:
-                      context: .
-                      cache-from: type=gha
-                      cache-to: type=gha,mode=max
-                      file: Dockerfile
-                      push: ${{ github.event_name != 'pull_request' }}
-                      tags: ${{ steps.meta.outputs.tags }}
-                      labels: ${{ steps.meta.outputs.labels }}
+                          push: false
+                          tags: ${{ steps.prepare.outputs.image }}
+                          platforms: ${{ env.DOCKER_PLATFORMS }}
+                          cache-from: type=local,src=/tmp/.buildx-cache
+                          cache-to: type=local,dest=/tmp/.buildx-cache-new
+                          context: .
+                
+                  - name: Move cache
+                    run:
+                      rm -rf /tmp/.buildx-cache
+                      mv /tmp/.buildx-cache-new /tmp/.buildx-cache
