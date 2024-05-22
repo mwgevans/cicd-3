@@ -3,6 +3,8 @@ run-name: 🧪 Run Tests on $${{ github.repository }}
 on:
   push:
   pull_request:
+concurrency:
+  group: ${{ github.workflow }}
 jobs:
   pre_job:
     runs-on: ubuntu-latest
